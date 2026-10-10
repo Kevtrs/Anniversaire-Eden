@@ -6,21 +6,34 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Back office · Photos d'Eden</title>
 <style>
-  :root{color-scheme:dark;--bg:#14102b;--card:#ffffff12;--txt:#fff;--accent:#ffd54a}
+  :root{color-scheme:dark;--bg:#14102b;--card:#ffffff12;--txt:#fff;--accent:#ffd54a;--good:#7dffb0;--bad:#ff6b7f}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);padding:16px}
   main{max-width:1000px;margin:0 auto}
   h1{margin:6px 0 14px}
+  h2{margin:0 0 10px;font-size:1.1rem}
   .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:16px}
-  button,.btn{font:inherit;font-weight:700;background:var(--accent);color:#2a1a00;border:0;border-radius:10px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .live{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--good);animation:pulse 1.5s infinite}
+  .dot.off{background:var(--bad);animation:none}
+  @keyframes pulse{50%{opacity:.3}}
+  #journal{list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto}
+  #journal li{display:flex;gap:10px;padding:6px 8px;border-radius:8px;font-size:.95rem}
+  #journal li:nth-child(odd){background:#ffffff08}
+  #journal time{opacity:.6;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #journal li.triche{background:#ff6b7f33;color:#ffd0d6;font-weight:700}
+  #journal li.ok{color:var(--good)}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
   figure{margin:0;background:var(--card);border-radius:12px;overflow:hidden}
+  figure.new{animation:flash 2.5s ease-out}
+  @keyframes flash{0%{box-shadow:0 0 0 4px var(--accent);transform:scale(1.03)}100%{box-shadow:0 0 0 0 transparent}}
   figure img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;cursor:zoom-in;background:#0006}
   figcaption{padding:8px 10px;font-size:.85rem}
   figcaption b{display:block;margin-bottom:2px}
-  .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .btn{font:inherit;font-weight:700;background:var(--accent);color:#2a1a00;border:0;border-radius:10px;padding:3px 9px;margin-top:6px;font-size:.8rem;cursor:pointer;text-decoration:none;display:inline-block}
   .hidden{display:none!important}
-  .bad{color:#ff8a8a}
+  .bad{color:var(--bad)}
   #zoom{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
   #zoom img{max-width:100%;max-height:100%;border-radius:12px}
   small{opacity:.7}
@@ -28,9 +41,18 @@
 </head>
 <body>
 <main>
-  <h1>📸 Photos d'Eden</h1>
-  <div class="top card"><small id="maj">Chargement…</small><button onclick="charger()">↻ Actualiser</button></div>
-  <p id="vide" class="hidden">Aucune photo pour l'instant.</p>
+  <h1>📸 Eden · en direct</h1>
+  <div class="top card">
+    <span class="live"><span class="dot" id="dot"></span><span id="etat">Connexion…</span></span>
+    <small id="maj"></small>
+  </div>
+
+  <section class="card">
+    <h2>Journal en direct</h2>
+    <ul id="journal"></ul>
+    <p id="videJ" class="hidden"><small>Rien pour l'instant. Dès qu'Eden ouvre le jeu, tout s'affiche ici.</small></p>
+  </section>
+
   <p id="err" class="bad"></p>
   <div id="groupes"></div>
 </main>
@@ -43,39 +65,63 @@ const SUPABASE_KEY = "sb_publishable_qKEw7ZR3rloU4L6p_jhZlg_aDvwZ8s0";   // clé
 
 const $ = id => document.getElementById(id);
 const urlPhoto = p => SUPABASE_URL + '/storage/v1/object/public/photos/' + p;
+const heure = d => new Date(d).toLocaleTimeString('fr-FR');
+let vus = new Set(), premier = true, signature = '';
 
 async function charger(){
-  $('err').textContent = '';
-  if(!SUPABASE_URL){ $('err').textContent = "Renseigne SUPABASE_URL et SUPABASE_KEY en haut du script."; $('maj').textContent = ''; return; }
-  const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=created_at.desc', {headers:{apikey:SUPABASE_KEY}});
-  if(!r.ok){ $('err').textContent = "Impossible de lire les photos (" + r.status + ")."; return; }
-  const rows = await r.json();
-  $('maj').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR') + ' · ' + rows.length + ' photo(s)';
-  $('vide').classList.toggle('hidden', rows.length > 0);
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=id.desc&limit=400', {headers:{apikey:SUPABASE_KEY}, cache:'no-store'});
+    if(!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    $('err').textContent = ''; $('dot').classList.remove('off'); $('etat').textContent = 'En direct';
+    $('maj').textContent = 'Mis à jour à ' + heure(Date.now());
+    const sig = rows.length + ':' + (rows[0] ? rows[0].id : 0);
+    if(sig !== signature){ signature = sig; rendre(rows); }
+  } catch(e){
+    $('dot').classList.add('off'); $('etat').textContent = 'Connexion perdue…'; $('err').textContent = "Impossible de lire les données (" + e.message + "). Nouvel essai automatique.";
+  }
+}
+
+function rendre(rows){
+  const evenements = rows.filter(x => x.defi === 0);
+  const photos = rows.filter(x => x.defi > 0);
+
+  const ul = $('journal'); ul.innerHTML = '';
+  $('videJ').classList.toggle('hidden', evenements.length > 0);
+  evenements.forEach(ev => {
+    const li = document.createElement('li');
+    if(/TRICHE/.test(ev.label)) li.className = 'triche'; else if(/^✅|🎁/.test(ev.label)) li.className = 'ok';
+    const t = document.createElement('time'); t.textContent = heure(ev.created_at);
+    const s = document.createElement('span'); s.textContent = ev.label;
+    li.append(t, s); ul.appendChild(li);
+  });
+
   const parSession = {};
-  rows.forEach(x => (parSession[x.session] = parSession[x.session] || []).push(x));
+  photos.forEach(x => (parSession[x.session] = parSession[x.session] || []).push(x));
   const g = $('groupes'); g.innerHTML = '';
   for(const items of Object.values(parSession)){
     items.sort((a,b) => a.defi - b.defi || new Date(a.created_at) - new Date(b.created_at));
     const sec = document.createElement('section'); sec.className = 'card';
-    const h = document.createElement('h2'); h.style.margin = '0 0 10px';
-    h.textContent = 'Session du ' + new Date(items[0].created_at).toLocaleString('fr-FR');
+    const h = document.createElement('h2');
+    h.textContent = 'Session de ' + heure(items[0].created_at) + ' · ' + items.length + ' photo(s)';
     const grid = document.createElement('div'); grid.className = 'grid';
     for(const it of items){
       const fig = document.createElement('figure');
+      if(!premier && !vus.has(it.id)) fig.className = 'new';
       const img = document.createElement('img'); img.alt = it.label; img.src = urlPhoto(it.path); img.loading = 'lazy';
       img.onclick = () => { $('zimg').src = img.src; $('zoom').classList.remove('hidden'); };
       const cap = document.createElement('figcaption');
-      const b = document.createElement('b'); b.textContent = 'Photo ' + it.defi;
-      const a = document.createElement('a'); a.className = 'btn'; a.textContent = '⬇ Télécharger'; a.href = img.src; a.target = '_blank'; a.rel = 'noopener';
-      a.style.cssText = 'padding:3px 9px;margin-top:6px;font-size:.8rem';
+      const b = document.createElement('b'); b.textContent = 'Photo ' + it.defi + ' · ' + heure(it.created_at);
+      const a = document.createElement('a'); a.className = 'btn'; a.textContent = '⬇ Ouvrir / enregistrer'; a.href = img.src; a.target = '_blank'; a.rel = 'noopener';
       cap.append(b, document.createTextNode(it.label), document.createElement('br'), a);
       fig.append(img, cap); grid.appendChild(fig);
     }
     sec.append(h, grid); g.appendChild(sec);
   }
+  rows.forEach(x => vus.add(x.id)); premier = false;
 }
-charger(); setInterval(charger, 20000);
+
+charger(); setInterval(charger, 3000);
 </script>
 </body>
 </html>

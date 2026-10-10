@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Joyeux anniversaire Eden !</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://mpvtsccshthjcgqxxkns.supabase.co" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   /* Palette : nuit violette + jaune soleil + rose bonbon + cyan */
   :root{--bg:#120c2e;--bg2:#2a1466;--card:#ffffff16;--line:#ffffff2e;--txt:#fff7ff;--muted:#cfc3f5;
@@ -85,7 +85,8 @@
   <section class="card" id="intro">
     <h2>Prêt ?</h2>
     <p>Un quiz, un shooting photo, et un test de mémoire. Aucune aide… sauf si tu galères vraiment 😏</p>
-    <button onclick="show('e1')">C'est parti !</button>
+    <p><b>⚠️ Reste sur cette page !</b> Si tu quittes l'écran (autre appli, autre onglet…), <b>tout recommence à zéro</b>.</p>
+    <button onclick="demarrer()">C'est parti !</button>
   </section>
 
   <!-- Épreuve 1 : message secret (César) -->
@@ -109,6 +110,7 @@
       <button id="pPrendre">📸 Prendre la photo</button>
       <button id="pEnvoyer" class="hidden">✅ Envoyer</button>
       <button id="pRefaire" class="hidden">↺ Reprendre</button>
+      <button id="pRetry" class="hidden">↻ Réessayer l'envoi</button>
     </div>
     <div class="msg" id="m2"></div>
   </section>
@@ -120,6 +122,12 @@
     <div class="stats"><span>Niveau : <span id="niv">0</span>/7</span><button id="startS" onclick="startSimon()" style="padding:6px 12px">Démarrer</button></div>
     <div id="simon" class="locked"></div>
     <div class="msg" id="m3"></div>
+  </section>
+
+  <section class="card hidden" id="triche">
+    <h2>Oups… 🚨</h2>
+    <p>Tu as quitté la page pendant un défi. Les règles sont les règles : <b>tout recommence à zéro</b> !</p>
+    <button onclick="recommencer()">Recommencer</button>
   </section>
 
   <section class="card hidden" id="coffre">
@@ -149,9 +157,11 @@ const CADEAU_TEXTE = _d("Sm95ZXV4IDEyIGFucyBFZGVuICEgVG9uIGNhZGVhdSA6IHVuZSBqb3V
 const CHIFFRES = {1:4, 2:2, 3:7};   // le code final est 427
 const CODE = "" + CHIFFRES[1] + CHIFFRES[2] + CHIFFRES[3];
 const $ = id => document.getElementById(id);
-const sections = ['intro','e1','e2','e3','coffre','gift'];
+const sections = ['intro','e1','e2','e3','coffre','gift','triche'];
+let current = 'intro', epoch = 0;   // epoch change à chaque remise à zéro : annule les actions en attente
+const later = (fn, ms) => { const ep = epoch; setTimeout(() => { if(ep === epoch) fn(); }, ms); };
 const couleurs=['#ff5e5e','#ffd54a','#5ec8ff','#9d6bff','#5effa0','#ff8f3d'];
-function show(id){ sections.forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0,0);
+function show(id){ current = id; sections.forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0,0);
   if(id==='e1') initQuiz(); if(id==='e2') initPhotos(); if(id==='e3') initSimon(); }
 function win(n){ const s=$('s'+n); s.textContent=CHIFFRES[n]; s.classList.add('ok'); confetti(60); }
 const norm = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
@@ -177,7 +187,7 @@ function check1(){
   });
   if(ok===QUIZ.length){
     $('m1').textContent = "Bravo ! Chiffre n°1 : " + CHIFFRES[1]; $('m1').className='msg good';
-    win(1); setTimeout(()=>show('e2'), 1800);
+    win(1); logEvent('✅ Défi 1 réussi (quiz)'); later(()=>show('e2'), 1800);
   } else { $('m1').textContent = ok + "/" + QUIZ.length + " — corrige les ❌ !"; $('m1').className='msg'; }
 }
 
@@ -194,27 +204,36 @@ const DEFIS_PHOTO = [
   "Dans la pose d'un super-héros 🦸",
   "Avec ton plus grand sourire, pour finir en beauté 😁"
 ];
-let pIdx = 0, pBlob = null;
+let pIdx = 0, pBlob = null, envois = [], echecs = [];
 const sid = (() => { const n = () => Math.random().toString(36).slice(2,10);
   try { let s = localStorage.getItem('sid'); if(!s){ s = n(); localStorage.setItem('sid', s); } return s; } catch(e){ return n(); } })();
 
-function initPhotos(){ pIdx = 0; drawPhoto(); }
+/* Journal visible en direct dans le back office (lignes « défi 0 » de la table) */
+function logEvent(txt){
+  if(!SUPABASE_URL) return;
+  fetch(SUPABASE_URL + "/rest/v1/photos", {method:'POST', keepalive:true,
+    headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:JSON.stringify({session:sid, defi:0, label:txt, path:''})}).catch(() => {});
+}
+function demarrer(){ logEvent('▶️ Eden a commencé le jeu'); show('e1'); }
+
+function initPhotos(){ pIdx = 0; envois = []; echecs = []; drawPhoto(); }
 function drawPhoto(){
   pBlob = null;
   $('pTitre').textContent = "Photo " + (pIdx+1) + "/" + DEFIS_PHOTO.length;
   $('pConsigne').textContent = DEFIS_PHOTO[pIdx];
-  ['pPreview','pEnvoyer','pRefaire'].forEach(id => $(id).classList.add('hidden'));
+  ['pPreview','pEnvoyer','pRefaire','pRetry'].forEach(id => $(id).classList.add('hidden'));
   $('pPrendre').classList.remove('hidden'); $('m2').textContent = '';
 }
-/* Redimensionne et convertit en JPEG (les iPhone fournissent parfois du HEIC) ; l'orientation EXIF est appliquée par le navigateur */
+/* Redimensionne et convertit en JPEG léger (les iPhone fournissent parfois du HEIC) ; l'orientation EXIF est appliquée par le navigateur */
 async function reduire(f){
   const url = URL.createObjectURL(f);
   const img = await new Promise((ok,ko)=>{ const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
-  const w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, 1600/Math.max(w,h));
+  const w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, 1280/Math.max(w,h));
   const c = document.createElement('canvas'); c.width = Math.round(w*k); c.height = Math.round(h*k);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   URL.revokeObjectURL(url);
-  return new Promise((ok,ko)=>c.toBlob(b => b ? ok(b) : ko(new Error('blob')), 'image/jpeg', .85));
+  return new Promise((ok,ko)=>c.toBlob(b => b ? ok(b) : ko(new Error('blob')), 'image/jpeg', .78));
 }
 $('pPrendre').onclick = $('pRefaire').onclick = () => $('pInput').click();
 $('pInput').addEventListener('change', async e => {
@@ -224,30 +243,54 @@ $('pInput').addEventListener('change', async e => {
   $('pPreview').src = URL.createObjectURL(pBlob); $('pPreview').classList.remove('hidden');
   $('pPrendre').classList.add('hidden'); $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); $('m2').textContent = '';
 });
-$('pEnvoyer').onclick = async () => {
-  if(!pBlob) return;
-  $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden'); $('m2').textContent = 'Envoi…'; $('m2').className = 'msg';
-  try {
-    if(SUPABASE_URL){
-      const path = sid + "/" + (pIdx+1) + "-" + Date.now() + ".jpg";
-      const h = {apikey:SUPABASE_KEY};
-      let r = await fetch(SUPABASE_URL + "/storage/v1/object/photos/" + path, {method:'POST', headers:{...h,'Content-Type':'image/jpeg'}, body:pBlob});
+
+/* Envoi d'une photo (3 essais). Part en arrière-plan : on passe tout de suite à la photo suivante. */
+async function uploadPhoto(blob, n, label){
+  if(!SUPABASE_URL) return true;
+  const h = {apikey:SUPABASE_KEY};
+  for(let t = 0; t < 3; t++){
+    try {
+      const path = sid + "/" + n + "-" + Date.now() + ".jpg";
+      let r = await fetch(SUPABASE_URL + "/storage/v1/object/photos/" + path, {method:'POST', headers:{...h,'Content-Type':'image/jpeg'}, body:blob});
       if(!r.ok) throw new Error('upload ' + r.status);
       r = await fetch(SUPABASE_URL + "/rest/v1/photos", {method:'POST', headers:{...h,'Content-Type':'application/json',Prefer:'return=minimal'},
-        body:JSON.stringify({session:sid, defi:pIdx+1, label:DEFIS_PHOTO[pIdx], path})});
+        body:JSON.stringify({session:sid, defi:n, label, path})});
       if(!r.ok) throw new Error('db ' + r.status);
-    }
-  } catch(err){
-    $('m2').textContent = "L'envoi a échoué (connexion ?). Réessaie."; $('m2').className = 'msg bad';
-    $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); return;
+      return true;
+    } catch(err){ await wait(800 * (t+1)); }
   }
+  return false;
+}
+$('pEnvoyer').onclick = () => {
+  if(!pBlob) return;
+  const n = pIdx + 1, label = DEFIS_PHOTO[pIdx], b = pBlob;
+  envois.push(uploadPhoto(b, n, label).then(ok => { if(!ok) echecs.push({b, n, label}); return ok; }));
   pIdx++;
-  if(pIdx >= DEFIS_PHOTO.length){
-    ['pPreview','pPrendre'].forEach(id => $(id).classList.add('hidden'));
-    $('pTitre').textContent = "Shooting terminé !"; $('pConsigne').textContent = "Superbes photos !";
-    $('m2').textContent = "Bravo ! Chiffre n°2 : " + CHIFFRES[2]; $('m2').className = 'msg good'; win(2); setTimeout(() => show('e3'), 2200);
-  } else { drawPhoto(); }
+  if(pIdx < DEFIS_PHOTO.length) drawPhoto(); else finPhotos();
 };
+async function finPhotos(){
+  ['pPreview','pPrendre','pEnvoyer','pRefaire'].forEach(id => $(id).classList.add('hidden'));
+  $('pTitre').textContent = "Shooting terminé !"; $('pConsigne').textContent = "Superbes photos !";
+  $('m2').textContent = "Envoi des dernières photos…"; $('m2').className = 'msg';
+  await Promise.all(envois);
+  if(echecs.length){
+    $('m2').textContent = echecs.length + " photo(s) n'ont pas pu partir (connexion ?)."; $('m2').className = 'msg bad';
+    $('pRetry').classList.remove('hidden'); return;
+  }
+  photosReussies();
+}
+$('pRetry').onclick = async () => {
+  $('pRetry').classList.add('hidden'); $('m2').textContent = "Nouvel essai…"; $('m2').className = 'msg';
+  const liste = echecs.splice(0);
+  const res = await Promise.all(liste.map(x => uploadPhoto(x.b, x.n, x.label)));
+  res.forEach((ok, i) => { if(!ok) echecs.push(liste[i]); });
+  if(echecs.length){ $('m2').textContent = "Toujours des photos bloquées, vérifie ta connexion."; $('m2').className = 'msg bad'; $('pRetry').classList.remove('hidden'); }
+  else photosReussies();
+};
+function photosReussies(){
+  $('m2').textContent = "Bravo ! Chiffre n°2 : " + CHIFFRES[2]; $('m2').className = 'msg good';
+  win(2); logEvent('✅ Défi 2 réussi (6 photos envoyées)'); later(() => show('e3'), 2200);
+}
 
 /* ---------- Défi 3 : Simon ---------- */
 const SIMON_COL=['#ff4d4d','#4dd2ff','#ffd54a','#5effa0'], FREQ=[262,330,392,523], CIBLE=7;
@@ -268,32 +311,51 @@ function initSimon(){
 function startSimon(){ try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); ac.resume(); }catch(e){} $('startS').classList.add('hidden'); seq=[]; $('m3').textContent=''; prochain(); }
 async function prochain(){
   seq.push(Math.floor(Math.random()*4)); $('niv').textContent=seq.length-1;
-  if(seq.length>CIBLE){ $('niv').textContent=CIBLE; $('m3').textContent="Mémoire de champion ! Chiffre n°3 : "+CHIFFRES[3]; $('m3').className='msg good'; win(3); setTimeout(()=>show('coffre'),2000); return; }
+  if(seq.length>CIBLE){ $('niv').textContent=CIBLE; $('m3').textContent="Mémoire de champion ! Chiffre n°3 : "+CHIFFRES[3]; $('m3').className='msg good'; win(3); logEvent('✅ Défi 3 réussi (Simon)'); later(()=>show('coffre'),2000); return; }
+  const ep = epoch;
   $('simon').classList.add('locked'); $('m3').textContent='Regarde…'; $('m3').className='msg';
-  await wait(700);
+  await wait(700); if(ep!==epoch) return;
   const vitesse = Math.max(230, 420 - seq.length*22);
-  for(const i of seq){ await flash(i, vitesse); await wait(vitesse*0.45); }
+  for(const i of seq){ await flash(i, vitesse); await wait(vitesse*0.45); if(ep!==epoch) return; }
   pos=0; jouant=true; $('simon').classList.remove('locked'); $('m3').textContent='À toi !';
 }
 async function presse(i){
   if(!jouant) return;
+  const ep = epoch;
   flash(i,220);
   if(i!==seq[pos]){
     jouant=false; $('simon').classList.add('locked'); $('m3').textContent="Raté ! Retour au niveau 1…"; $('m3').className='msg bad';
-    await wait(1600); seq=[]; prochain(); return;
+    await wait(1600); if(ep!==epoch) return; seq=[]; prochain(); return;
   }
   pos++;
-  if(pos===seq.length){ jouant=false; $('simon').classList.add('locked'); $('niv').textContent=seq.length; await wait(900); prochain(); }
+  if(pos===seq.length){ jouant=false; $('simon').classList.add('locked'); $('niv').textContent=seq.length; await wait(900); if(ep!==epoch) return; prochain(); }
 }
 
 /* ---------- Coffre ---------- */
 function openChest(){
   if($('code').value.trim()===CODE){
     $('gTitre').textContent=CADEAU_TITRE; $('gTexte').textContent=CADEAU_TEXTE;
+    logEvent('🎁 COFFRE OUVERT : cadeau révélé !');
     show('gift'); confetti(300); setTimeout(()=>confetti(200),900);
   } else { $('mc').textContent="Mauvais code… relis ton carnet en haut 😉"; $('mc').className='msg bad'; }
 }
 $('code').addEventListener('keydown', e => e.key==='Enter' && openChest());
+
+/* ---------- Anti-triche : quitter la page pendant un défi remet tout à zéro ---------- */
+/* (pas surveillé pendant le défi photo : l'appareil photo de l'iPhone peut mettre la page en pause) */
+const SURVEILLE = {e1:'le quiz', e3:'Simon', coffre:'le coffre'};
+function triche(){
+  if(!SURVEILLE[current]) return;
+  const ou = SURVEILLE[current];
+  epoch++; jouant = false; seq = [];
+  logEvent('⚠️ TRICHE : a quitté la page pendant ' + ou + ' → tout est remis à zéro');
+  [1,2,3].forEach(n => { const s = $('s'+n); s.textContent = '?'; s.classList.remove('ok'); });
+  show('triche');
+}
+function recommencer(){ epoch++; show('intro'); }
+document.addEventListener('visibilitychange', () => { if(document.hidden) triche(); });
+window.addEventListener('pagehide', triche);
+window.addEventListener('blur', triche);
 
 /* ---------- Confettis ---------- */
 const cv=$('cv'), ctx=cv.getContext('2d'); let parts=[], anim=false;
