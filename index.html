@@ -178,13 +178,16 @@ function initQuiz(){
   $('quiz').innerHTML = QUIZ.map((x,i)=>`<p><b>${i+1}.</b> ${x.q}</p><input type="text" id="q${i}" autocomplete="off" placeholder="Ta réponse…"><div class="msg" id="qm${i}"></div>`).join('');
 }
 function check1(){
-  let ok = 0;
+  let ok = 0; const rep = [];
   QUIZ.forEach((x,i)=>{
-    const good = x.re.test(norm($('q'+i).value));
+    const brut = $('q'+i).value.trim();
+    const good = x.re.test(norm(brut));
     if(good) ok++;
+    rep.push((i+1) + ') ' + x.q + ' → « ' + (brut.slice(0,60) || '(vide)') + ' » ' + (good ? '✅' : '❌'));
     $('qm'+i).textContent = good ? '✅' : '❌ ' + x.ind;
     $('qm'+i).className = 'msg ' + (good ? 'good' : 'bad');
   });
+  logEvent('📝 Quiz, essai (' + ok + '/' + QUIZ.length + ')\n' + rep.join('\n'));
   if(ok===QUIZ.length){
     $('m1').textContent = "Bravo ! Chiffre n°1 : " + CHIFFRES[1]; $('m1').className='msg good';
     win(1); logEvent('✅ Défi 1 réussi (quiz)'); later(()=>show('e2'), 1800);
@@ -339,7 +342,7 @@ function openChest(){
     $('gTitre').textContent=CADEAU_TITRE; $('gTexte').textContent=CADEAU_TEXTE;
     logEvent('🎁 COFFRE OUVERT : cadeau révélé !');
     show('gift'); confetti(300); setTimeout(()=>confetti(200),900);
-  } else { $('mc').textContent="Mauvais code… relis ton carnet en haut 😉"; $('mc').className='msg bad'; }
+  } else { logEvent('🔐 Mauvais code essayé : « ' + $('code').value.trim().slice(0,20) + ' »'); $('mc').textContent="Mauvais code… relis ton carnet en haut 😉"; $('mc').className='msg bad'; }
 }
 $('code').addEventListener('keydown', e => e.key==='Enter' && openChest());
 
