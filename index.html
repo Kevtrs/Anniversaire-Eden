@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joyeux anniversaire Eden !</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Palette : nuit violette + jaune soleil + rose bonbon + cyan */
+  :root{--bg:#120c2e;--bg2:#2a1466;--card:#ffffff16;--line:#ffffff2e;--txt:#fff7ff;--muted:#cfc3f5;
+    --accent:#ffd23f;--accent2:#ff9f1c;--pink:#ff4fa3;--cyan:#3fd9ff;--good:#7dffb0;--bad:#ff8a9a;
+    --display:"Lilita One","Trebuchet MS",system-ui,sans-serif;--body:"Quicksand","Segoe UI",system-ui,sans-serif;color-scheme:dark}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{background:var(--bg)}
+  body{margin:0;min-height:100vh;font-family:var(--body);font-weight:600;font-size:1.05rem;line-height:1.5;color:var(--txt);
+    background:linear-gradient(160deg,var(--bg2),var(--bg) 60%);display:flex;justify-content:center;padding:20px 16px 48px;overflow-x:hidden}
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .bg::before,.bg::after{content:"";position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(70px);opacity:.35;animation:drift 18s ease-in-out infinite alternate}
+  .bg::before{background:var(--pink);top:-25vmax;left:-20vmax}
+  .bg::after{background:var(--cyan);bottom:-30vmax;right:-25vmax;animation-delay:-9s}
+  @keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+  .fl{position:absolute;bottom:-60px;opacity:.5;animation:float linear infinite}
+  @keyframes float{to{transform:translateY(-115vh) rotate(25deg)}}
+  main{position:relative;z-index:1;width:100%;max-width:540px}
+  .eyebrow{margin:6px 0 0;text-align:center;text-transform:uppercase;letter-spacing:.22em;font-size:.78rem;color:var(--cyan);font-weight:700}
+  h1{font-family:var(--display);font-weight:400;font-size:2.3rem;line-height:1.1;text-align:center;margin:6px 0 10px;text-wrap:balance;
+    color:var(--accent);text-shadow:0 4px 0 #b76a00,0 8px 22px #0007}
+  h2{font-family:var(--display);font-weight:400;font-size:1.5rem;margin:0 0 8px;color:var(--accent);text-wrap:balance}
+  p{margin:0 0 12px;color:var(--txt)}
+  .lead{text-align:center;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:22px;margin:16px 0;
+    box-shadow:0 18px 40px #0005, inset 0 1px 0 #ffffff26;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  section.card:not(.hidden){animation:rise .5s cubic-bezier(.16,1,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}}
+  .hidden{display:none!important}
+  button{font:inherit;font-family:var(--display);font-size:1.05rem;letter-spacing:.02em;color:#3a2200;border:0;border-radius:999px;padding:12px 24px;cursor:pointer;
+    background:linear-gradient(180deg,var(--accent),var(--accent2));box-shadow:0 5px 0 #b76a00,0 10px 18px #0005;transition:transform .12s,box-shadow .12s}
+  button:hover{transform:translateY(-2px)}
+  button:active{transform:translateY(4px);box-shadow:0 1px 0 #b76a00,0 4px 8px #0005}
+  button:focus-visible,input:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+  input[type=text],#code{font:inherit;font-weight:700;padding:13px;border-radius:16px;border:2px solid var(--line);background:#0000004d;color:#fff;width:100%;margin:6px 0 4px;text-align:center;font-size:1.15rem;transition:border-color .15s}
+  input[type=text]:focus,#code:focus{border-color:var(--accent);outline:none}
+  #code{font-family:var(--display);letter-spacing:.6em;font-size:1.8rem;padding-left:.6em}
+  .carnet{display:flex;gap:12px;justify-content:center;margin:14px 0 4px}
+  .slot{width:68px;height:68px;border-radius:50%;border:3px dashed #ffffff55;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:2.2rem;color:#ffffff88;background:#0003;transition:all .3s}
+  .slot.ok{border:3px solid var(--accent);color:#3a2200;background:radial-gradient(circle at 30% 30%,#fff3a8,var(--accent) 60%,var(--accent2));box-shadow:0 0 22px #ffd23f99;animation:pop2 .6s cubic-bezier(.16,1,.3,1)}
+  @keyframes pop2{from{transform:scale(.4) rotate(-40deg)}}
+  .msg{min-height:1.5em;margin:6px 0 10px;font-weight:700}
+  .bad{color:var(--bad)}.good{color:var(--good)}
+  .cipher{font-family:var(--display);font-size:1.35rem;background:#0000004d;border:1px solid var(--line);border-radius:18px;padding:16px;text-align:center;text-wrap:balance;margin:10px 0}
+  .stats{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px;color:var(--cyan)}
+  #pPreview{box-shadow:0 10px 24px #0007;border:3px solid #fff}
+  #simon{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:310px;margin:16px auto}
+  .pad{aspect-ratio:1;border-radius:26px;border:0;opacity:.5;padding:0;box-shadow:inset 0 -10px 0 #0003,0 8px 16px #0005;transition:opacity .1s,transform .1s,box-shadow .1s}
+  .pad:hover{transform:none}
+  .pad.lit{opacity:1;transform:scale(1.05);box-shadow:inset 0 -10px 0 #0002,0 0 34px #fffc}
+  #simon.locked .pad{pointer-events:none}
+  #gift{text-align:center;border-color:var(--accent);box-shadow:0 0 40px #ffd23f55,0 18px 40px #0005}
+  #gift .big{font-size:5rem;animation:pop 1s ease infinite alternate}
+  @keyframes pop{to{transform:scale(1.15) rotate(6deg)}}
+  canvas{position:fixed;inset:0;pointer-events:none;z-index:9}
+  small{color:var(--muted);font-weight:600}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg" id="bg" aria-hidden="true"></div>
+<main>
+  <p class="eyebrow">Mission secr&egrave;te &middot; 12 ans</p>
+  <h1>🎂 Joyeux anniversaire Eden ! 🎉</h1>
+  <p class="lead">12 ans aujourd'hui… donc des épreuves de niveau <b>12 ans</b>. Réussis les <b>3 défis</b> pour récupérer les 3 chiffres du code qui ouvre le coffre de ton cadeau.</p>
+
+  <div class="carnet">
+    <div class="slot" id="s1">?</div><div class="slot" id="s2">?</div><div class="slot" id="s3">?</div>
+  </div>
+
+  <section class="card" id="intro">
+    <h2>Prêt ?</h2>
+    <p>Un quiz, un shooting photo, et un test de mémoire. Aucune aide… sauf si tu galères vraiment 😏</p>
+    <button onclick="show('e1')">C'est parti !</button>
+  </section>
+
+  <!-- Épreuve 1 : message secret (César) -->
+  <section class="card hidden" id="e1">
+    <h2>Défi 1 · Le quiz 🧠</h2>
+    <p>Réponds correctement aux 5 questions pour décrocher le premier chiffre.</p>
+    <div id="quiz"></div>
+    <div class="msg" id="m1"></div>
+    <button onclick="check1()">Valider</button>
+  </section>
+
+  <!-- Épreuve 2 : shooting photo -->
+  <section class="card hidden" id="e2">
+    <h2>Défi 2 · Le shooting photo 📸</h2>
+    <p>Prends-toi en photo dans 6 situations différentes. <small>Tes photos sont envoyées à Kevin, personne d'autre ne les voit.</small></p>
+    <div class="stats"><span id="pTitre">Photo 1/6</span></div>
+    <div class="cipher" id="pConsigne"></div>
+    <input type="file" id="pInput" accept="image/*" capture="user" class="hidden">
+    <img id="pPreview" class="hidden" alt="Aperçu de ta photo" style="width:100%;border-radius:12px;margin-top:10px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button id="pPrendre" onclick="$('pInput').click()">📸 Prendre la photo</button>
+      <button id="pEnvoyer" class="hidden" onclick="envoyer()">✅ Envoyer</button>
+      <button id="pRefaire" class="hidden" onclick="$('pInput').click()">↺ Reprendre</button>
+    </div>
+    <div class="msg" id="m2"></div>
+  </section>
+
+  <!-- Épreuve 3 : Simon -->
+  <section class="card hidden" id="e3">
+    <h2>Défi 3 · Simon 🎵</h2>
+    <p>Regarde et écoute la suite, puis répète-la. Atteins le <b>niveau 9</b> sans te tromper. Une erreur et tout repart de zéro !</p>
+    <div class="stats"><span>Niveau : <span id="niv">0</span>/9</span><button id="startS" onclick="startSimon()" style="padding:6px 12px">Démarrer</button></div>
+    <div id="simon" class="locked"></div>
+    <div class="msg" id="m3"></div>
+  </section>
+
+  <section class="card hidden" id="coffre">
+    <h2>Le coffre 🔐</h2>
+    <p>Entre les 3 chiffres que tu as récupérés :</p>
+    <input id="code" inputmode="numeric" maxlength="3" placeholder="_ _ _">
+    <div class="msg" id="mc"></div>
+    <button onclick="openChest()">Ouvrir</button>
+  </section>
+
+  <section class="card hidden" id="gift">
+    <div class="big">🎁</div>
+    <h2 id="gTitre"></h2>
+    <p id="gTexte"></p>
+  </section>
+</main>
+<canvas id="cv"></canvas>
+
+<script>
+/* ===== À PERSONNALISER ===== */
+/* (texte encodé en base64 pour ne pas être lisible dans le code source avant la révélation) */
+const _d = s => decodeURIComponent(escape(atob(s)));
+const CADEAU_TITRE = _d("UGFyIFRvdXRhdGlzICEgVW5lIGpvdXJuw6llIGF1IFBhcmMgQXN0w6lyaXggdCdhdHRlbmQgIQ==");
+const CADEAU_TEXTE = _d("Sm95ZXV4IDEyIGFucyBFZGVuICEgVG9uIGNhZGVhdSA6IHVuZSBqb3VybsOpZSBlbnRpw6hyZSBhdSBQYXJjIEFzdMOpcml4LCBhdmVjIGxlcyBhdHRyYWN0aW9ucywgbGVzIHJpZ29sYWRlcyBldCBsZXMgZ291cm1hbmRpc2VzLiBMYSBkYXRlIGV0IGxlcyBkw6l0YWlscyBhcnJpdmVudCBiaWVudMO0dOKApiBTaWduw6kgS2V2aW4g4p2k77iP");
+/* ============================ */
+
+const CHIFFRES = {1:4, 2:2, 3:7};   // le code final est 427
+const CODE = "" + CHIFFRES[1] + CHIFFRES[2] + CHIFFRES[3];
+const $ = id => document.getElementById(id);
+const sections = ['intro','e1','e2','e3','coffre','gift'];
+const couleurs=['#ff5e5e','#ffd54a','#5ec8ff','#9d6bff','#5effa0','#ff8f3d'];
+function show(id){ sections.forEach(s => $(s).classList.toggle('hidden', s !== id)); window.scrollTo(0,0);
+  if(id==='e1') initQuiz(); if(id==='e2') initPhotos(); if(id==='e3') initSimon(); }
+function win(n){ const s=$('s'+n); s.textContent=CHIFFRES[n]; s.classList.add('ok'); confetti(60); }
+const norm = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+
+/* ---------- Défi 1 : César ---------- */
+const QUIZ = [
+  {q:"Combien font 7 × 8 ?", re:/^56$/, ind:"Pense à 7 × 8 = ... la table de 7 !"},
+  {q:"Quel est l'animal terrestre le plus rapide du monde ?", re:/guepard/, ind:"C'est un grand félin tacheté."},
+  {q:"Quelle est la plus grande planète du système solaire ?", re:/jupiter/, ind:"Elle a une grande tache rouge."},
+  {q:"Quel océan sépare l'Europe de l'Amérique ?", re:/atlantique/, ind:"Ça commence par « Atl… »"},
+  {q:"De quelle couleur est le cheval blanc d'Henri IV ?", re:/blanc/, ind:"Relis la question 😄"}
+];
+function initQuiz(){
+  $('quiz').innerHTML = QUIZ.map((x,i)=>`<p><b>${i+1}.</b> ${x.q}</p><input type="text" id="q${i}" autocomplete="off" placeholder="Ta réponse…"><div class="msg" id="qm${i}"></div>`).join('');
+}
+function check1(){
+  let ok = 0;
+  QUIZ.forEach((x,i)=>{
+    const good = x.re.test(norm($('q'+i).value));
+    if(good) ok++;
+    $('qm'+i).textContent = good ? '✅' : '❌ ' + x.ind;
+    $('qm'+i).className = 'msg ' + (good ? 'good' : 'bad');
+  });
+  if(ok===QUIZ.length){
+    $('m1').textContent = "Bravo ! Chiffre n°1 : " + CHIFFRES[1]; $('m1').className='msg good';
+    win(1); setTimeout(()=>show('e2'), 1800);
+  } else { $('m1').textContent = ok + "/" + QUIZ.length + " — corrige les ❌ !"; $('m1').className='msg'; }
+}
+
+/* ---------- Défi 2 : shooting photo ---------- */
+/* Renseigne ces 2 valeurs après avoir créé ton projet Supabase (voir INSTALLATION.md).
+   Laissées vides, le jeu fonctionne en mode démo : rien n'est envoyé. */
+const SUPABASE_URL = "";   // ex : https://abcdefgh.supabase.co
+const SUPABASE_KEY = "";   // clé « anon public »
+const DEFIS_PHOTO = [
+  "Ta plus belle grimace 🤪",
+  "Bouche grande ouverte, l'air super surpris(e) 😱",
+  "Avec ton objet préféré de ta chambre",
+  "En plein saut (bien en l'air !) 🦘",
+  "Dans la pose d'un super-héros 🦸",
+  "Avec ton plus grand sourire, pour finir en beauté 😁"
+];
+let pIdx = 0, pBlob = null;
+const sid = (() => { const n = () => Math.random().toString(36).slice(2,10);
+  try { let s = localStorage.getItem('sid'); if(!s){ s = n(); localStorage.setItem('sid', s); } return s; } catch(e){ return n(); } })();
+
+function initPhotos(){ pIdx = 0; drawPhoto(); }
+function drawPhoto(){
+  pBlob = null;
+  $('pTitre').textContent = "Photo " + (pIdx+1) + "/" + DEFIS_PHOTO.length;
+  $('pConsigne').textContent = DEFIS_PHOTO[pIdx];
+  $('pPreview').classList.add('hidden'); $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden');
+  $('pPrendre').classList.remove('hidden'); $('m2').textContent = '';
+}
+async function reduire(f){
+  let bmp;
+  try { bmp = await createImageBitmap(f, {imageOrientation:'from-image'}); }
+  catch(e){ bmp = await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=URL.createObjectURL(f); }); }
+  const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight, k = Math.min(1, 1280/Math.max(w,h));
+  const c = document.createElement('canvas'); c.width = Math.round(w*k); c.height = Math.round(h*k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise((ok,ko)=>c.toBlob(b => b ? ok(b) : ko(new Error('blob')), 'image/jpeg', .82));
+}
+$('pInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try { pBlob = await reduire(f); } catch(err){ $('m2').textContent = "Photo illisible, réessaie."; $('m2').className='msg bad'; return; }
+  e.target.value = '';
+  $('pPreview').src = URL.createObjectURL(pBlob); $('pPreview').classList.remove('hidden');
+  $('pPrendre').classList.add('hidden'); $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); $('m2').textContent = '';
+});
+async function envoyer(){
+  if(!pBlob) return;
+  $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden'); $('m2').textContent = 'Envoi…'; $('m2').className='msg';
+  try {
+    if(SUPABASE_URL){
+      const path = sid + "/" + (pIdx+1) + "-" + Date.now() + ".jpg";
+      const h = {apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY};
+      let r = await fetch(SUPABASE_URL + "/storage/v1/object/photos/" + path, {method:'POST', headers:{...h,'Content-Type':'image/jpeg'}, body:pBlob});
+      if(!r.ok) throw new Error('upload ' + r.status);
+      r = await fetch(SUPABASE_URL + "/rest/v1/photos", {method:'POST', headers:{...h,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({session:sid, defi:pIdx+1, label:DEFIS_PHOTO[pIdx], path})});
+      if(!r.ok) throw new Error('db ' + r.status);
+    }
+  } catch(err){
+    $('m2').textContent = "L'envoi a échoué (connexion ?). Réessaie."; $('m2').className='msg bad';
+    $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); return;
+  }
+  pIdx++;
+  if(pIdx >= DEFIS_PHOTO.length){
+    $('pPreview').classList.add('hidden'); $('pPrendre').classList.add('hidden');
+    $('pTitre').textContent = "Shooting terminé !"; $('pConsigne').textContent = "Superbes photos !";
+    $('m2').textContent = "Bravo ! Chiffre n°2 : " + CHIFFRES[2]; $('m2').className='msg good'; win(2); setTimeout(()=>show('e3'), 2200);
+  } else { drawPhoto(); }
+}
+
+/* ---------- Défi 3 : Simon ---------- */
+const SIMON_COL=['#ff4d4d','#4dd2ff','#ffd54a','#5effa0'], FREQ=[262,330,392,523], CIBLE=9;
+let seq=[], pos=0, jouant=false, ac=null;
+function bip(i, ms){
+  try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=FREQ[i]; o.type='triangle';
+    g.gain.setValueAtTime(.25,ac.currentTime); g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);
+    o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+ms/1000); }catch(e){}
+}
+function flash(i, ms=380){ const p=$('simon').children[i]; p.classList.add('lit'); bip(i,ms); return new Promise(r=>setTimeout(()=>{p.classList.remove('lit'); r();}, ms)); }
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+function initSimon(){
+  const s=$('simon'); s.innerHTML=''; s.classList.add('locked');
+  SIMON_COL.forEach((c,i)=>{ const b=document.createElement('button'); b.className='pad'; b.style.background=c; b.onclick=()=>presse(i); s.appendChild(b); });
+  seq=[]; $('niv').textContent=0; $('m3').textContent=''; $('startS').classList.remove('hidden');
+}
+function startSimon(){ $('startS').classList.add('hidden'); seq=[]; $('m3').textContent=''; prochain(); }
+async function prochain(){
+  seq.push(Math.floor(Math.random()*4)); $('niv').textContent=seq.length-1;
+  if(seq.length>CIBLE){ $('niv').textContent=CIBLE; $('m3').textContent="Mémoire de champion ! Chiffre n°3 : "+CHIFFRES[3]; $('m3').className='msg good'; win(3); setTimeout(()=>show('coffre'),2000); return; }
+  $('simon').classList.add('locked'); $('m3').textContent='Regarde…'; $('m3').className='msg';
+  await wait(700);
+  const vitesse = Math.max(230, 420 - seq.length*22);
+  for(const i of seq){ await flash(i, vitesse); await wait(vitesse*0.45); }
+  pos=0; jouant=true; $('simon').classList.remove('locked'); $('m3').textContent='À toi !';
+}
+async function presse(i){
+  if(!jouant) return;
+  flash(i,220);
+  if(i!==seq[pos]){
+    jouant=false; $('simon').classList.add('locked'); $('m3').textContent="Raté ! Retour au niveau 1…"; $('m3').className='msg bad';
+    await wait(1600); seq=[]; prochain(); return;
+  }
+  pos++;
+  if(pos===seq.length){ jouant=false; $('simon').classList.add('locked'); $('niv').textContent=seq.length; await wait(900); prochain(); }
+}
+
+/* ---------- Coffre ---------- */
+function openChest(){
+  if($('code').value.trim()===CODE){
+    $('gTitre').textContent=CADEAU_TITRE; $('gTexte').textContent=CADEAU_TEXTE;
+    show('gift'); confetti(300); setTimeout(()=>confetti(200),900);
+  } else { $('mc').textContent="Mauvais code… relis ton carnet en haut 😉"; $('mc').className='msg bad'; }
+}
+$('code').addEventListener('keydown', e => e.key==='Enter' && openChest());
+
+/* ---------- Confettis ---------- */
+const cv=$('cv'), ctx=cv.getContext('2d'); let parts=[], anim=false;
+function resize(){ cv.width=innerWidth; cv.height=innerHeight; } resize(); addEventListener('resize',resize);
+function confetti(n){
+  for(let i=0;i<n;i++) parts.push({x:Math.random()*cv.width,y:-10-Math.random()*cv.height*.3,vx:(Math.random()-.5)*4,vy:2+Math.random()*4,
+    s:5+Math.random()*7,c:couleurs[Math.floor(Math.random()*couleurs.length)],r:Math.random()*6});
+  if(!anim){ anim=true; requestAnimationFrame(tick); }
+}
+function tick(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.r+=.15; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6); ctx.restore(); });
+  parts=parts.filter(p=>p.y<cv.height+20);
+  if(parts.length) requestAnimationFrame(tick); else { anim=false; ctx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* ---------- Decor : ballons et etoiles qui flottent ---------- */
+(function(){
+  const bg = document.getElementById('bg'), E = ['\u{1F388}','\u2728','\u{1F389}','\u2B50','\u{1F382}','\u{1F381}'];
+  for(let i=0;i<14;i++){
+    const s = document.createElement('span'); s.className = 'fl'; s.textContent = E[i % E.length];
+    s.style.left = (Math.random()*96) + '%'; s.style.fontSize = (18 + Math.random()*22) + 'px';
+    s.style.animationDuration = (14 + Math.random()*16) + 's'; s.style.animationDelay = (-Math.random()*20) + 's';
+    bg.appendChild(s);
+  }
+})();</script>
+</body>
+</html>

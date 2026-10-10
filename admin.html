@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Back office · Photos d'Eden</title>
+<style>
+  :root{color-scheme:dark;--bg:#14102b;--card:#ffffff12;--txt:#fff;--accent:#ffd54a}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);padding:16px}
+  main{max-width:1000px;margin:0 auto}
+  h1{margin:6px 0 14px}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:16px}
+  input{font:inherit;padding:10px;border-radius:10px;border:2px solid #ffffff44;background:#0006;color:#fff;width:100%;margin:6px 0}
+  button,.btn{font:inherit;font-weight:700;background:var(--accent);color:#2a1a00;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block}
+  .hidden{display:none!important}
+  .bad{color:#ff8a8a}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  figure{margin:0;background:var(--card);border-radius:12px;overflow:hidden}
+  figure img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;cursor:zoom-in;background:#0006}
+  figcaption{padding:8px 10px;font-size:.85rem}
+  figcaption b{display:block;margin-bottom:2px}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  #zoom{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:5;padding:16px}
+  #zoom img{max-width:100%;max-height:100%;border-radius:12px}
+  small{opacity:.7}
+</style>
+</head>
+<body>
+<main>
+  <h1>📸 Photos d'Eden</h1>
+
+  <section class="card" id="login">
+    <p>Connecte-toi avec le compte créé dans Supabase (voir INSTALLATION.md).</p>
+    <input id="email" type="email" placeholder="E-mail" autocomplete="username">
+    <input id="pwd" type="password" placeholder="Mot de passe" autocomplete="current-password">
+    <button onclick="connexion()">Se connecter</button>
+    <p class="bad" id="err"></p>
+  </section>
+
+  <section class="hidden" id="app">
+    <div class="top card">
+      <span id="compte"></span>
+      <span><button onclick="charger()">↻ Actualiser</button> <button onclick="deco()">Quitter</button></span>
+    </div>
+    <p id="vide" class="hidden">Aucune photo pour l'instant.</p>
+    <div id="groupes"></div>
+  </section>
+</main>
+<div id="zoom" class="hidden" onclick="this.classList.add('hidden')"><img id="zimg" alt="Photo agrandie"></div>
+
+<script>
+/* Mêmes valeurs que dans index.html */
+const SUPABASE_URL = "";   // ex : https://abcdefgh.supabase.co
+const SUPABASE_KEY = "";   // clé « anon public »
+
+const $ = id => document.getElementById(id);
+let token = null;
+const H = () => ({apikey:SUPABASE_KEY, Authorization:'Bearer ' + (token || SUPABASE_KEY)});
+
+async function connexion(){
+  $('err').textContent = '';
+  if(!SUPABASE_URL){ $('err').textContent = "Renseigne SUPABASE_URL et SUPABASE_KEY en haut du script."; return; }
+  const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {method:'POST',
+    headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'}, body:JSON.stringify({email:$('email').value.trim(), password:$('pwd').value})});
+  if(!r.ok){ $('err').textContent = "Connexion refusée : vérifie l'e-mail et le mot de passe."; return; }
+  token = (await r.json()).access_token;
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('compte').textContent = $('email').value.trim();
+  charger();
+}
+function deco(){ token = null; $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('pwd').value=''; $('groupes').innerHTML=''; }
+
+async function charger(){
+  const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=created_at.desc', {headers:H()});
+  if(!r.ok){ $('groupes').innerHTML = '<p class="bad">Impossible de lire les photos (' + r.status + ').</p>'; return; }
+  const rows = await r.json();
+  $('vide').classList.toggle('hidden', rows.length > 0);
+  const parSession = {};
+  rows.forEach(x => (parSession[x.session] = parSession[x.session] || []).push(x));
+  const g = $('groupes'); g.innerHTML = '';
+  for(const [s, items] of Object.entries(parSession)){
+    items.sort((a,b) => a.defi - b.defi || new Date(a.created_at) - new Date(b.created_at));
+    const sec = document.createElement('section'); sec.className = 'card';
+    const d = new Date(items[0].created_at).toLocaleString('fr-FR');
+    sec.innerHTML = '<h2 style="margin:0 0 10px">Session du ' + d + ' <small>(' + items.length + ' photos)</small></h2><div class="grid"></div>';
+    const grid = sec.querySelector('.grid');
+    for(const it of items){
+      const fig = document.createElement('figure');
+      const img = document.createElement('img'); img.alt = it.label;
+      const cap = document.createElement('figcaption');
+      const b = document.createElement('b'); b.textContent = 'Photo ' + it.defi; cap.appendChild(b);
+      cap.appendChild(document.createTextNode(it.label));
+      fig.append(img, cap); grid.appendChild(fig);
+      fetch(SUPABASE_URL + '/storage/v1/object/authenticated/photos/' + it.path, {headers:H()})
+        .then(res => res.blob()).then(bl => {
+          const u = URL.createObjectURL(bl); img.src = u;
+          img.onclick = () => { $('zimg').src = u; $('zoom').classList.remove('hidden'); };
+          const a = document.createElement('a'); a.className = 'btn'; a.textContent = '⬇'; a.href = u; a.download = 'eden-' + it.defi + '.jpg';
+          a.style.cssText = 'padding:3px 9px;margin-top:6px'; cap.appendChild(a);
+        });
+    }
+    g.appendChild(sec);
+  }
+}
+$('pwd').addEventListener('keydown', e => e.key === 'Enter' && connexion());
+</script>
+</body>
+</html>
