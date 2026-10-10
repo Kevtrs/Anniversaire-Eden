@@ -60,6 +60,14 @@
   @keyframes pop{to{transform:scale(1.15) rotate(6deg)}}
   canvas{position:fixed;inset:0;pointer-events:none;z-index:9}
   small{color:var(--muted);font-weight:600}
+    /* iPhone / Safari */
+  html{-webkit-text-size-adjust:100%}
+  button{touch-action:manipulation}
+  .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
+  #pPreview{display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:16px;margin-top:10px;background:#0000004d}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .thumbs img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:2px solid #fff}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -95,12 +103,12 @@
     <p>Prends-toi en photo dans 6 situations différentes.</p>
     <div class="stats"><span id="pTitre">Photo 1/6</span></div>
     <div class="cipher" id="pConsigne"></div>
-    <input type="file" id="pInput" accept="image/*" capture="user" class="hidden">
-    <img id="pPreview" class="hidden" alt="Aperçu de ta photo" style="width:100%;border-radius:12px;margin-top:10px">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-      <button id="pPrendre" onclick="$('pInput').click()">📸 Prendre la photo</button>
-      <button id="pEnvoyer" class="hidden" onclick="envoyer()">✅ Envoyer</button>
-      <button id="pRefaire" class="hidden" onclick="$('pInput').click()">↺ Reprendre</button>
+    <input type="file" id="pInput" accept="image/*" capture="user" class="vh">
+    <img id="pPreview" class="hidden" alt="Aperçu de ta photo">
+    <div class="row">
+      <button id="pPrendre">📸 Prendre la photo</button>
+      <button id="pEnvoyer" class="hidden">✅ Envoyer</button>
+      <button id="pRefaire" class="hidden">↺ Reprendre</button>
     </div>
     <div class="msg" id="m2"></div>
   </section>
@@ -195,28 +203,30 @@ function drawPhoto(){
   pBlob = null;
   $('pTitre').textContent = "Photo " + (pIdx+1) + "/" + DEFIS_PHOTO.length;
   $('pConsigne').textContent = DEFIS_PHOTO[pIdx];
-  $('pPreview').classList.add('hidden'); $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden');
+  ['pPreview','pEnvoyer','pRefaire'].forEach(id => $(id).classList.add('hidden'));
   $('pPrendre').classList.remove('hidden'); $('m2').textContent = '';
 }
+/* Redimensionne et convertit en JPEG (les iPhone fournissent parfois du HEIC) ; l'orientation EXIF est appliquée par le navigateur */
 async function reduire(f){
-  let bmp;
-  try { bmp = await createImageBitmap(f, {imageOrientation:'from-image'}); }
-  catch(e){ bmp = await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=URL.createObjectURL(f); }); }
-  const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight, k = Math.min(1, 1280/Math.max(w,h));
+  const url = URL.createObjectURL(f);
+  const img = await new Promise((ok,ko)=>{ const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+  const w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, 1600/Math.max(w,h));
   const c = document.createElement('canvas'); c.width = Math.round(w*k); c.height = Math.round(h*k);
-  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  return new Promise((ok,ko)=>c.toBlob(b => b ? ok(b) : ko(new Error('blob')), 'image/jpeg', .82));
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  URL.revokeObjectURL(url);
+  return new Promise((ok,ko)=>c.toBlob(b => b ? ok(b) : ko(new Error('blob')), 'image/jpeg', .85));
 }
+$('pPrendre').onclick = $('pRefaire').onclick = () => $('pInput').click();
 $('pInput').addEventListener('change', async e => {
   const f = e.target.files[0]; if(!f) return;
-  try { pBlob = await reduire(f); } catch(err){ $('m2').textContent = "Photo illisible, réessaie."; $('m2').className='msg bad'; return; }
+  try { pBlob = await reduire(f); } catch(err){ $('m2').textContent = "Photo illisible, réessaie."; $('m2').className = 'msg bad'; return; }
   e.target.value = '';
   $('pPreview').src = URL.createObjectURL(pBlob); $('pPreview').classList.remove('hidden');
   $('pPrendre').classList.add('hidden'); $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); $('m2').textContent = '';
 });
-async function envoyer(){
+$('pEnvoyer').onclick = async () => {
   if(!pBlob) return;
-  $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden'); $('m2').textContent = 'Envoi…'; $('m2').className='msg';
+  $('pEnvoyer').classList.add('hidden'); $('pRefaire').classList.add('hidden'); $('m2').textContent = 'Envoi…'; $('m2').className = 'msg';
   try {
     if(SUPABASE_URL){
       const path = sid + "/" + (pIdx+1) + "-" + Date.now() + ".jpg";
@@ -228,22 +238,22 @@ async function envoyer(){
       if(!r.ok) throw new Error('db ' + r.status);
     }
   } catch(err){
-    $('m2').textContent = "L'envoi a échoué (connexion ?). Réessaie."; $('m2').className='msg bad';
+    $('m2').textContent = "L'envoi a échoué (connexion ?). Réessaie."; $('m2').className = 'msg bad';
     $('pEnvoyer').classList.remove('hidden'); $('pRefaire').classList.remove('hidden'); return;
   }
   pIdx++;
   if(pIdx >= DEFIS_PHOTO.length){
-    $('pPreview').classList.add('hidden'); $('pPrendre').classList.add('hidden');
+    ['pPreview','pPrendre'].forEach(id => $(id).classList.add('hidden'));
     $('pTitre').textContent = "Shooting terminé !"; $('pConsigne').textContent = "Superbes photos !";
-    $('m2').textContent = "Bravo ! Chiffre n°2 : " + CHIFFRES[2]; $('m2').className='msg good'; win(2); setTimeout(()=>show('e3'), 2200);
+    $('m2').textContent = "Bravo ! Chiffre n°2 : " + CHIFFRES[2]; $('m2').className = 'msg good'; win(2); setTimeout(() => show('e3'), 2200);
   } else { drawPhoto(); }
-}
+};
 
 /* ---------- Défi 3 : Simon ---------- */
 const SIMON_COL=['#ff4d4d','#4dd2ff','#ffd54a','#5effa0'], FREQ=[262,330,392,523], CIBLE=7;
 let seq=[], pos=0, jouant=false, ac=null;
 function bip(i, ms){
-  try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+  try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); if(ac.state==='suspended') ac.resume();
     const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=FREQ[i]; o.type='triangle';
     g.gain.setValueAtTime(.25,ac.currentTime); g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);
     o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+ms/1000); }catch(e){}
@@ -255,7 +265,7 @@ function initSimon(){
   SIMON_COL.forEach((c,i)=>{ const b=document.createElement('button'); b.className='pad'; b.style.background=c; b.onclick=()=>presse(i); s.appendChild(b); });
   seq=[]; $('niv').textContent=0; $('m3').textContent=''; $('startS').classList.remove('hidden');
 }
-function startSimon(){ $('startS').classList.add('hidden'); seq=[]; $('m3').textContent=''; prochain(); }
+function startSimon(){ try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); ac.resume(); }catch(e){} $('startS').classList.add('hidden'); seq=[]; $('m3').textContent=''; prochain(); }
 async function prochain(){
   seq.push(Math.floor(Math.random()*4)); $('niv').textContent=seq.length-1;
   if(seq.length>CIBLE){ $('niv').textContent=CIBLE; $('m3').textContent="Mémoire de champion ! Chiffre n°3 : "+CHIFFRES[3]; $('m3').className='msg good'; win(3); setTimeout(()=>show('coffre'),2000); return; }
