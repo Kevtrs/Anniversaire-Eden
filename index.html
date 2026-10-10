@@ -215,6 +215,8 @@ function logEvent(txt){
     headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
     body:JSON.stringify({session:sid, defi:0, label:txt, path:''})}).catch(() => {});
 }
+/* Tu vois dans le back office quand quelqu'un ouvre le site */
+setTimeout(() => logEvent('👀 Site ouvert (' + (/iPhone|iPad/.test(navigator.userAgent) ? 'iPhone/iPad' : /Android/.test(navigator.userAgent) ? 'Android' : 'ordinateur') + ')'), 500);
 function demarrer(){ logEvent('▶️ Eden a commencé le jeu'); show('e1'); }
 
 function initPhotos(){ pIdx = 0; envois = []; echecs = []; drawPhoto(); }

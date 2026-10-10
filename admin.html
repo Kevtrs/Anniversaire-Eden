@@ -45,6 +45,7 @@
   <div class="top card">
     <span class="live"><span class="dot" id="dot"></span><span id="etat">Connexion…</span></span>
     <small id="maj"></small>
+    <button class="btn" onclick="raz()" style="margin:0">↺ Remettre l'affichage à zéro</button>
   </div>
 
   <section class="card">
@@ -66,13 +67,22 @@ const SUPABASE_KEY = "sb_publishable_qKEw7ZR3rloU4L6p_jhZlg_aDvwZ8s0";   // clé
 const $ = id => document.getElementById(id);
 const urlPhoto = p => SUPABASE_URL + '/storage/v1/object/public/photos/' + p;
 const heure = d => new Date(d).toLocaleTimeString('fr-FR');
-let vus = new Set(), premier = true, signature = '';
+let vus = new Set(), premier = true, signature = '', maxId = 0;
+/* Affichage remis à zéro : on masque tout ce qui a un id <= ce seuil (les données restent dans la base) */
+const SEUIL_INITIAL = 4;
+const debut = () => { try { return Math.max(SEUIL_INITIAL, +localStorage.getItem('razId') || 0); } catch(e){ return SEUIL_INITIAL; } };
+function raz(){
+  try { localStorage.setItem('razId', String(maxId)); } catch(e){}
+  signature = ''; vus = new Set(); premier = true; charger();
+}
 
 async function charger(){
   try {
     const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=id.desc&limit=400', {headers:{apikey:SUPABASE_KEY}, cache:'no-store'});
     if(!r.ok) throw new Error(r.status);
-    const rows = await r.json();
+    const tous = await r.json();
+    maxId = tous.reduce((m, x) => Math.max(m, x.id), 0);
+    const rows = tous.filter(x => x.id > debut());
     $('err').textContent = ''; $('dot').classList.remove('off'); $('etat').textContent = 'En direct';
     $('maj').textContent = 'Mis à jour à ' + heure(Date.now());
     const sig = rows.length + ':' + (rows[0] ? rows[0].id : 0);
