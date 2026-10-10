@@ -69,7 +69,7 @@ const urlPhoto = p => SUPABASE_URL + '/storage/v1/object/public/photos/' + p;
 const heure = d => new Date(d).toLocaleTimeString('fr-FR');
 let vus = new Set(), premier = true, signature = '', maxId = 0;
 /* Affichage remis à zéro : on masque tout ce qui a un id <= ce seuil (les données restent dans la base) */
-const SEUIL_INITIAL = 4;
+const SEUIL_INITIAL = 6;
 const debut = () => { try { return Math.max(SEUIL_INITIAL, +localStorage.getItem('razId') || 0); } catch(e){ return SEUIL_INITIAL; } };
 function raz(){
   try { localStorage.setItem('razId', String(maxId)); } catch(e){}
