@@ -38,8 +38,8 @@
 
 <script>
 /* Mêmes valeurs que dans index.html */
-const SUPABASE_URL = "";   // ex : https://abcdefgh.supabase.co
-const SUPABASE_KEY = "";   // clé « anon public »
+const SUPABASE_URL = "https://mpvtsccshthjcgqxxkns.supabase.co";   // ex : https://abcdefgh.supabase.co
+const SUPABASE_KEY = "sb_publishable_qKEw7ZR3rloU4L6p_jhZlg_aDvwZ8s0";   // clé « anon public »
 
 const $ = id => document.getElementById(id);
 const urlPhoto = p => SUPABASE_URL + '/storage/v1/object/public/photos/' + p;
@@ -47,7 +47,7 @@ const urlPhoto = p => SUPABASE_URL + '/storage/v1/object/public/photos/' + p;
 async function charger(){
   $('err').textContent = '';
   if(!SUPABASE_URL){ $('err').textContent = "Renseigne SUPABASE_URL et SUPABASE_KEY en haut du script."; $('maj').textContent = ''; return; }
-  const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=created_at.desc', {headers:{apikey:SUPABASE_KEY, Authorization:'Bearer ' + SUPABASE_KEY}});
+  const r = await fetch(SUPABASE_URL + '/rest/v1/photos?select=*&order=created_at.desc', {headers:{apikey:SUPABASE_KEY}});
   if(!r.ok){ $('err').textContent = "Impossible de lire les photos (" + r.status + ")."; return; }
   const rows = await r.json();
   $('maj').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR') + ' · ' + rows.length + ' photo(s)';
