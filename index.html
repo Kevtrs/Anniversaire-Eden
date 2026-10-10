@@ -108,8 +108,8 @@
   <!-- Épreuve 3 : Simon -->
   <section class="card hidden" id="e3">
     <h2>Défi 3 · Simon 🎵</h2>
-    <p>Regarde et écoute la suite, puis répète-la. Atteins le <b>niveau 9</b> sans te tromper. Une erreur et tout repart de zéro !</p>
-    <div class="stats"><span>Niveau : <span id="niv">0</span>/9</span><button id="startS" onclick="startSimon()" style="padding:6px 12px">Démarrer</button></div>
+    <p>Regarde et écoute la suite, puis répète-la. Atteins le <b>niveau 7</b> sans te tromper. Une erreur et tout repart de zéro !</p>
+    <div class="stats"><span>Niveau : <span id="niv">0</span>/7</span><button id="startS" onclick="startSimon()" style="padding:6px 12px">Démarrer</button></div>
     <div id="simon" class="locked"></div>
     <div class="msg" id="m3"></div>
   </section>
@@ -240,7 +240,7 @@ async function envoyer(){
 }
 
 /* ---------- Défi 3 : Simon ---------- */
-const SIMON_COL=['#ff4d4d','#4dd2ff','#ffd54a','#5effa0'], FREQ=[262,330,392,523], CIBLE=9;
+const SIMON_COL=['#ff4d4d','#4dd2ff','#ffd54a','#5effa0'], FREQ=[262,330,392,523], CIBLE=7;
 let seq=[], pos=0, jouant=false, ac=null;
 function bip(i, ms){
   try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)();
